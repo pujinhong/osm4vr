@@ -106,6 +106,7 @@ AFRAME.registerComponent('osm-geojson', {
   },
 
   onSrcLoaded: function (text) {
+    console.log("geojson",text)
     let json = JSON.parse(text);
     if (this.data.lat == 0 && this.data.lon == 0) {
       let center = this.features2center(json.features);
@@ -261,6 +262,7 @@ AFRAME.registerComponent('osm-geojson', {
 
     // ExtrudeGeometry expects x and y as base shape and extrudes z, rotate to match
     geometry.rotateX(-Math.PI / 2);
+    
     if (minHeight) {
       geometry.translate(0, minHeight, 0);
     }
@@ -278,7 +280,8 @@ AFRAME.registerComponent('osm-geojson', {
     // use magic numbers to set default values, the Pi related values define a half sphere
     let geometry = new THREE.SphereGeometry(1, 32, 16, 0, 2 * Math.PI, 0, 0.5 * Math.PI);
     geometry.scale(radius_m, height - minHeight, radius_m);
-    geometry.translate(center.x, minHeight, -center.y);
+    // 将穹顶形状建筑距离地面高度提高2米
+    geometry.translate(center.x, minHeight + 2, -center.y);
     return geometry;
   },
 

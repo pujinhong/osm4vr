@@ -1,13 +1,13 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="zh-CN">
 <head>
   <meta charset="utf-8">
-  <title>osm4vr demo - Fly through the world in VR with OSM map data</title>
-  <meta name="description" content="osm4vr: Fly through the world in Virtual Reality, with map and buildings from OpenStreetmap">
-  <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
-  <script src="https://unpkg.com/aframe-extras@7.5.1/dist/aframe-extras.controls.min.js"></script>
-  <script src="https://unpkg.com/osmtogeojson@3.0.0-beta.5/osmtogeojson.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/utils/BufferGeometryUtils.min.js"></script>
+  <title>OSM沉浸浏览</title>
+  <meta name="description" content=" 在VR中浏览OpenStreetMap地图和建筑">
+  <script src="aframe.min.js"></script>
+  <script src="aframe-extras.controls.min.js"></script>
+  <script src="osmtogeojson.js"></script>
+  <script src="BufferGeometryUtils.min.js"></script>
   <script src="osm-geojson.js"></script>
   <script src="osm-tiles.js"></script>
   <!-- <script src="log2hud.js"></script> -->
@@ -29,47 +29,41 @@
 <body>
   <div id="info" class="ontop">
     <div id="description">
-      <h1>osm4vr</h1>
+      <h1>OSM沉浸浏览</h1>
       <p>
-        Fly through the world in Virtual Reality, in your browser.
-        The map, buildings and potentially other features come from OpenStreetMap.
+        在浏览器中通过VR浏览世界。
+        地图、建筑物来自OpenStreetMap服务。
       </p>
       <p>
-        In VR, you can use hand controllers to fly around by extending your arms and flapping.
-        The experience also works in non-VR mode, where you can use arrow or W/A/S/D keys to move, and touch on mobile.
+        在VR模式下，您可以使用手柄控制器，左摇杆控制前后左右移动，右摇杆控制转换视角，X按钮控制上升，Y按钮控制下降。
+        该体验也适用于非VR模式，您可以使用箭头键或W/A/S/D键移动，在移动设备上则可通过触摸操作。
       </p>
-      <p>Search for a place or enter the latitude / longitude directly and press Go, or simply press Menu to start at the default position.</p>
+      <p>直接输入纬度/经度并按Go，瞬移到指定位置。</p>
+      <p>按VR，进入VR模式；按B按钮，退出VR模式。</p>
     </div>
     <div id="location">
-      <input id="searchInput" type="search" placeholder="Berlin" />
-      <button id="searchButton" onclick="searchLocation(); return false;">Search</button>
-      <br />
-      <input type="number" id="latitude" placeholder="latitude" value="52.52" size="8" step="0.00001" min="-90" max="90" />
-      <input type="number" id="longitude" placeholder="longitude" value="13.41" size="8" step="0.00001" min="-180" max="180" />
-      <button id="goButton" onclick="loadLocation(); return false;">Go</button>
+      <!-- <input id="searchInput" type="search" placeholder="Berlin" >
+      <button id="searchButton" onclick="searchLocation(); return false;" type="button">Search</button> -->
+      <br>
+      <input type="number" id="latitude" placeholder="latitude" value="52.52" step="0.00001" min="-90" max="90">
+      <input type="number" id="longitude" placeholder="longitude" value="13.41" step="0.00001" min="-180" max="180">
+      <button id="goButton" type="button" onclick="loadLocation(); return false;" type="button">Go</button>
     </div>
-    <div id="legal">
-      <p>
-        Source code (MIT license): <a href="https://github.com/ctrlw/osm4vr">github.com/ctrlw/osm4vr</a>
-        <br />
-        Map data and tiles &copy;
-        <a href="https://www.openstreetmap.org/" target="_blank">OpenStreetMap</a>
-        contributors, under <a href="https://www.openstreetmap.org/copyright"
-        target="_blank">ODbL</a> license.
-      </p>
-    </div>
+    <div id="legal"></div>
   </div>
 
   <!-- HTML button to control flying in non-VR mode -->
-  <button id="flapButton" class="ontop">Flap</button>
-  <button id="menuButton" class="ontop" onclick="toggleMenu(); return false;">Menu</button>
+  <button id="flapButton" class="ontop" type="button">上升</button>
+  <button id="vrButton" class="ontop" type="button" onclick="document.querySelector('a-scene').enterVR(); return false;" type="button">VR模式</button>
+  <button id="menuButton" class="ontop" type="button" onclick="toggleMenu(); return false;" type="button">展开/隐藏面板</button>
 
-  <a-scene>
+  <!-- 增加高精度深度缓冲区和优化的视锥体设置来解决高空穿模问题 -->
+  <a-scene renderer="precision: high; logarithmicDepthBuffer: true" camera="near: 0.1; far: 10000;">
     <a-assets>
     </a-assets>
-
+ 
     <!-- The rig contains the camera and can move around -->
-    <a-entity id="rig" position="0 0 0" rotation="0 0 0" movement-controls="speed: 1; fly: true; camera: #head;">
+    <a-entity id="rig" position="0 0 0" rotation="0 0 0" movement-controls="speed: 2; fly: true; camera: #head;">
       <!-- Camera position and rotation in the rig get overwritten by the actual VR head-set, starting at default height 1.6m -->
       <a-entity id="head" camera look-controls wasd-controls="fly: true" birdman log2hud="target: chud" position="0 1.6 0">
         <!-- "Head up displays" to show live data for camera and left/right hand controller -->
@@ -77,7 +71,7 @@
         <a-entity id="chud" position="1 0.5 -2" scale="2 2 1"></a-entity>
         <a-entity id="rhud" position="1.5 0 -2" scale="2 2 1"></a-entity>
       </a-entity>
-      
+
       <!-- The actual left and right hand controllers -->
       <a-entity id="leftHand" laser-controls="hand: left" wing log2hud="target: lhud" raycaster="objects: .collidable;"></a-entity>
       <a-entity id="rightHand" laser-controls="hand: right" wing log2hud="target: rhud" raycaster="objects: .collidable;"></a-entity>
@@ -85,6 +79,7 @@
 
     <a-entity osm-tiles="lat: 52.52; lon: 13.41; trackId: head" rotation="-90 0 0" shadow="receive: true"></a-entity>
     <a-entity osm-geojson="lat: 52.52; lon: 13.41; radius_m: 500; trackId: head"></a-entity>
+     
   </a-scene>
 
 
@@ -93,9 +88,51 @@
     const rig = document.getElementById('rig');
     const head = document.getElementById('head');
     const VAXIS = new THREE.Vector3(0, 1, 0);
-    
+
+    // 监听VR手柄上的X和Y按钮事件
+    function setupControllerButtonEvents() {
+      // 获取左右控制器
+      const leftHand = document.getElementById('leftHand');
+      const rightHand = document.getElementById('rightHand');
+
+      // 为两个控制器都添加按钮事件监听
+      const controllers = [leftHand, rightHand];
+
+      controllers.forEach(controller => {
+        if (controller) {
+          // 监听X按钮按下事件 - 上升
+          controller.addEventListener('xbuttondown', function() {
+            rig.object3D.position.y += 10; // 增加Y坐标使角色上升
+          });
+
+          // 监听Y按钮按下事件 - 下降
+          controller.addEventListener('ybuttondown', function() {
+            // 确保角色不会降到地面以下
+            if (rig.object3D.position.y > 0) {
+              rig.object3D.position.y -= 10; // 减少Y坐标使角色下降
+            }
+          });
+
+          // 监听B按钮按下事件 - 直接退出VR模式
+          controller.addEventListener('bbuttondown', function() {
+            // 获取A-Frame场景元素
+            const scene = document.querySelector('a-scene');
+            // 直接退出VR模式（移除confirm对话框，因为在VR模式下可能无法正常显示）
+            scene.exitVR();
+          });
+        }
+      });
+    }
+
+ 
+    // 当场景加载完成后设置控制器按钮事件和天空背景跟随逻辑
+    document.querySelector('a-scene').addEventListener('loaded', () => {
+      setupControllerButtonEvents(); 
+    });
+
+
     document.getElementById("flapButton").addEventListener('click', e => {
-      rig.object3D.position.y += 5;
+      rig.object3D.position.y += 10;
       head.components.birdman.dir.z = -0.1;
       head.components.birdman.dir.applyAxisAngle(VAXIS, head.object3D.rotation.y);
     });
@@ -116,7 +153,7 @@
       document.getElementById('longitude').value = urlParams.get('lon');
       loadLocation();
     }
-      
+
     function toggleMenu() {
       let style = document.getElementById('info').style;
       style.display = style.display == 'none' ? 'block' : 'none';
